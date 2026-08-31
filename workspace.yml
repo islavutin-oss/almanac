@@ -1,0 +1,154 @@
+name: Almanac
+icon: 📡
+brand_color: '#5B21B6'
+sidebar_color: '#1E1B4B'
+providers:
+  main:
+    base_url: ${AI_BASE_URL}
+    api_key: ${AI_API_KEY}
+users:
+  default:
+    name: Sam
+    role: Analyst
+    default: true
+channels:
+- id: general
+  label: general
+  icon: Hash
+  type: chat
+- id: catalogue
+  label: Catalogue
+  icon: Boxes
+  type: addon
+apps:
+  advisor:
+    suggestions:
+    - I am building an interactive coding assistant — what should I be looking at?
+    - We push 200M input tokens a month. What would moving off a frontier model save?
+    - We care about tail latency in one region. What can this data actually tell me?
+    - What is the cheapest model that handles a million tokens of context?
+    name: Vera
+    role: Helps you pick a model for what you are building, and tells you when the question needs a person
+      rather than a price list.
+    type: agentino
+    provider: main
+    max_turns: 12
+    model: gpt-5.5
+    avatar: 🧭
+    color: '#7C3AED'
+    group: customer
+    soul: agents/advisor/SOUL.md
+    tools: agents/advisor/tools/
+  providers:
+    suggestions:
+    - How much of this catalogue has anyone actually measured?
+    - Is fast-to-first-token and fast-to-generate a trade-off, or can you get both?
+    - If I send a prompt to one of these APIs, where does it physically go?
+    - What moved in the last day — price or latency?
+    name: Rune
+    role: Tracks the whole picture — every model on OpenRouter with price, context, measured quality and
+      speed, and the providers actually serving them, where they are, and whether they publish terms you
+      can read.
+    type: agentino
+    provider: main
+    max_turns: 12
+    model: gpt-5.5
+    avatar: 🌍
+    color: '#0891B2'
+    group: backoffice
+    soul: agents/providers/SOUL.md
+    tools: agents/providers/tools/
+    shared_tools:
+    - agents/_catalogue/tools/
+    - agents/_newsdesk/
+  editor:
+    suggestions:
+    - Has today earned an article?
+    - What have you already published this week?
+    - What is the one question today actually answered?
+    name: Ines
+    role: Writes for the public blog off twenty-two inference feeds — up to one article a day, and nothing
+      on a day that did not earn one.
+    type: agentino
+    max_turns: 16
+    model: gpt-5.5
+    provider: main
+    avatar: 📝
+    color: '#D97706'
+    group: backoffice
+    soul: agents/editor/SOUL.md
+    tools: agents/editor/tools/
+    shared_tools:
+    - agents/_newsdesk/
+suggestions:
+- I need a model with a big context window and a small bill — what are my options?
+- What would 50M input tokens a month cost me?
+- What's the cheapest model that handles a million tokens of context?
+- Are there any decent free models?
+- How do I get my inference latency down?
+settings:
+  sections:
+  - id: gateways
+    type: gateway_status
+    label: Channels
+    description: Where this desk can be reached from outside.
+    gateways:
+    - id: telegram
+      status: unconfigured
+      detail: Inbound polling with DM pairing and group mention routing.
+      label: Telegram
+    - id: slack
+      status: unconfigured
+      detail: Socket Mode, so no public URL is needed.
+      label: Slack
+    - id: whatsapp
+      status: unconfigured
+      detail: Outbound replies through a Baileys bridge.
+      label: WhatsApp
+    - id: web
+      status: connected
+      detail: This UI. Streaming chat, attachments and channel history.
+      label: Web workspace
+  - id: digest_schedule
+    type: schedule
+    label: Digest schedule
+    field: daily_digest_cron
+    default: 0 7 * * *
+    description: When Rune files the daily inference read to the channel.
+  - id: news_bar
+    type: number_pair
+    label: What counts as news
+    description: How the feed sweep decides what is worth surfacing.
+    fields:
+    - key: relevance_floor
+      label: Minimum relevance score
+      default: 4
+    - key: dedup_window_days
+      label: Do not repeat a story for (days)
+      default: 14
+  - id: digest_rules
+    type: toggle_list
+    label: Digest rules
+    description: How Rune behaves when there is little to report.
+    items:
+    - key: skip_when_quiet
+      label: File nothing rather than pad a quiet day
+      value: true
+    - key: include_chart
+      label: Include a chart when one adds something
+      value: true
+    - key: translate_chinese
+      label: Translate Chinese-language sources
+      value: true
+  - id: catalogue_bar
+    type: key_value
+    label: Catalogue thresholds
+    description: Bounds the model desk applies before reporting.
+    fields:
+    - key: new_model_window_days
+      label: Treat a model as new for (days)
+      value: '7'
+    - key: price_ceiling_usd_per_m
+      label: Ignore models above ($/M input)
+      value: '20'
+routines: routines.yml

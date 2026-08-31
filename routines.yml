@@ -1,0 +1,126 @@
+routines:
+  daily-digest:
+    agent_id: providers
+    schedule: 0 7 * * *
+    prompt: "Write today's inference read.\n\nCall your own tools — nobody is going to answer a mention\
+      \ inside a routine:\n\n  whats_changed      what moved since the last snapshot: price, quality,\n\
+      \                     and TTFT regressions of 10% or more\n  scan_inference     the feeds, already\
+      \ scored for inference relevance\n  already_reported   what you filed before; read this BEFORE drafting\n\
+      \  mark_reported      call it on every story you use\n  speed_vs_price     latency against throughput,\
+      \ when that is the story\n  coverage           how much of the catalogue is measured at all\n\n\
+      Open with a title line and nothing else on it, so a reader scrolling\n#general can tell at a glance\
+      \ that this is the daily read and not a reply\nto someone:\n\n  ## Inference read — <D Month YYYY>\n\
+      \nThen one standfirst sentence: the single most important thing that moved.\nThen the detail.\n\n\
+      The title is a label, not a summary — no counts in it.\n\nLead with what actually moved. There is\
+      \ no standing header — a fixed row of\ncounts at the top of every digest guarantees the first thing\
+      \ a reader sees is\nstale, and teaches them to skip it. If the strongest thing today is a latency\n\
+      regression, open on that. If it is a price cut, open on the price cut.\n\nRank what you have by\
+      \ whether a reader could act on it:\n\n  strong   a latency or price move with a number and a named\
+      \ model; a\n           measurement that contradicts what people assume\n  weak     catalogue counts,\
+      \ how many models a vendor lists, how many are\n           free, the largest context window. Countable,\
+      \ not useful.\n\nUse a kpi block only when the numbers in it are the finding. One chart only\nif\
+      \ it shows something a sentence would not.\n\nIf nothing meaningful moved, say so in one line and\
+      \ stop.\n\nClose with **What to do** and a one-line **So what**, tagging by context:\n\n  - **@Ines**\
+      \ when a story is worth a piece on the blog — you are the one who\n    sees the material first,\
+      \ and she writes what you flag. Say what the article\n    would argue, not just the subject.\n \
+      \ - **@Sam** when something needs a decision or a judgement call rather than\n    another number.\n\
+      \nTag nobody if nothing is owed. One or two items, never more than three.\n"
+    description: The daily read on the model landscape.
+    enabled: true
+    delivery:
+      kind: channel
+      target: general
+  weekly-landscape:
+    agent_id: providers
+    schedule: 0 8 * * 1
+    description: Monday view of how the catalogue is shaped.
+    enabled: true
+    prompt: 'Post the weekly landscape to #general.
+
+
+      Cover the week''s launches, then the shape of the catalogue: price against
+
+      context, and which vendors hold the most listings. Two charts at most —
+
+      pick the two that disagree with what someone would assume.
+
+      '
+    delivery:
+      kind: channel
+      target: general
+  provider-watch:
+    agent_id: providers
+    schedule: 0 9 * * 3
+    description: Midweek check on who is serving, and from where.
+    enabled: true
+    prompt: 'Post the provider check.
+
+
+      How many providers, where they are headquartered, and how many publish
+
+      neither a privacy policy nor terms. Report the gap as a fact about what
+
+      is published — not as an accusation.
+
+      '
+    delivery:
+      kind: channel
+      target: general
+  daily-snapshot:
+    agent_id: providers
+    schedule: 0 6 * * *
+    prompt: 'Call `record_today` FIRST, before anything else. It writes today''s snapshot of
+
+      the catalogue.
+
+
+      That write is the whole point of this routine. Nothing upstream keeps history —
+
+      OpenRouter serves only "now" — so a day you do not record is a day nobody can
+
+      ever compare against. It cannot be backfilled later.
+
+
+      Then call `history_depth` and report, in one line, how many days are held.
+
+
+      If `record_today` fails, say so plainly. Do not report the depth as though
+
+      nothing were wrong: a count that looks healthy while the write silently failed
+
+      is worse than an error, because it hides the gap.
+
+      '
+    description: Record the catalogue, so tomorrow can be compared with today.
+    enabled: true
+    delivery:
+      kind: channel
+      target: general
+  daily-article:
+    agent_id: editor
+    schedule: 0 16 * * *
+    description: One article a day for the public blog — when the day earned one.
+    enabled: true
+    prompt: "Write and publish today's article for the public blog — if today earned one.\n\n**Up to one\
+      \ a day, not one a day.** Check `already_reported` and\n`list_published` first. If nothing has moved\
+      \ that a reader could act on, do not\nwrite: say in one line what you looked at and that there was\
+      \ nothing, and stop\nwithout calling publish_article. A daily quota met with filler is how a blog\n\
+      stops being read, and this audience notices immediately.\n\nNever republish or re-date an existing\
+      \ article to fill a gap. An old piece\nwearing today's date is the one thing that would make every\
+      \ other date on the\nblog untrustworthy.\n\nWork in this order:\n\n  1. list_published    what is\
+      \ already on the blog. Do not repeat a subject.\n  2. scan_inference    today's material, scored\
+      \ for inference relevance\n  3. already_reported  what the daily read and yesterday's article already\
+      \ covered\n  4. whats_changed / speed_vs_price / best_value / coverage  for the numbers\n\nThen\
+      \ write 700-1100 words on ONE question today actually answered —\nnot a roundup.\n\nPick a question\
+      \ your readers could act on. A latency regression nobody\nannounced, a measurement that contradicts\
+      \ an assumption, what a real volume\nactually costs. Not how many models launched, how many are\
+      \ free, or which\nvendor lists the most — those are countable rather than useful, and an\naudience\
+      \ that deploys inference will notice the difference immediately. Markdown, no title heading, the\
+      \ page adds one. Open with\nthe finding, not with context. Every number needs a source link.\n\n\
+      Publish it with publish_article. Use your own name in the byline so\nreaders know an agent wrote\
+      \ it.\n\nIf the week gave you nothing worth 700 words, publish nothing and say so\nin one line.\
+      \ A thin week is not a reason to pad.\n\nFinish your reply with: what you published, the URL, and\
+      \ two sentences on\nwhat it argues. That reply is what the team sees."
+    delivery:
+      kind: channel
+      target: general

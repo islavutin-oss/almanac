@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      # agentino supplies the @tool decorator the tool modules import at
+      # definition time, so it is needed to collect them at all.
+      - run: pip install "agentino-framework>=1.1.1" pytest ruff
+      - name: pytest
+        run: pytest tests/ -q
+      - name: ruff check
+        run: ruff check .
+      - name: ruff format --check
+        run: ruff format --check .
+
+  imports:
+    # The tests run offline against fixtures. This checks the modules the
+    # agents actually load still import — a syntax error in a tool file would
+    # otherwise only surface when an agent tried to call it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install "agentino-framework>=1.1.1"
+      - name: every agent module imports
+        run: |
+          python - <<'PY'
+          import importlib.util, pathlib, sys
+          root = pathlib.Path("agents")
+          sys.path.insert(0, str(root))
+          failed = []
+          for f in sorted(root.rglob("*.py")):
+              if f.name == "__init__.py":
+                  continue
+              sys.path.insert(0, str(f.parent))
+              spec = importlib.util.spec_from_file_location(f.stem, f)
+              mod = importlib.util.module_from_spec(spec)
+              try:
+                  spec.loader.exec_module(mod)
+              except Exception as e:
+                  failed.append(f"{f}: {type(e).__name__}: {e}")
+          if failed:
+              print("\n".join(failed))
+              raise SystemExit(1)
+          print("all agent modules import")
+          PY
+
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pyyaml
+      - name: workspace.yml and routines.yml are valid, and carry no credentials
+        run: |
+          python - <<'PY'
+          import re, yaml, pathlib
+          ws = yaml.safe_load(pathlib.Path("workspace.yml").read_text())
+          rt = yaml.safe_load(pathlib.Path("routines.yml").read_text())
+          assert ws.get("apps"), "workspace declares no apps"
+          assert rt.get("routines"), "routines file declares no routines"
+
+          # Every SOUL and tools directory an app names must exist, or the
+          # agent boots with an empty persona and nobody notices.
+          for app_id, app in ws["apps"].items():
+              for key in ("soul", "tools"):
+                  p = pathlib.Path(app[key])
+                  assert p.exists(), f"{app_id}.{key} -> {p} does not exist"
+
+          # Every routine must name an app that exists.
+          for name, r in rt["routines"].items():
+              assert r["agent_id"] in ws["apps"], f"routine {name} -> unknown agent {r['agent_id']}"
+
+          # The repository copy must never carry a live credential.
+          text = pathlib.Path("workspace.yml").read_text()
+          for pattern in (r"aa_[A-Za-z0-9]{16,}", r"sk-[A-Za-z0-9]{16,}", r"pk_[A-Za-z0-9]{16,}"):
+              assert not re.search(pattern, text), f"workspace.yml contains something matching {pattern}"
+          print("config valid, no credentials")
+          PY

@@ -1,0 +1,12 @@
+.cache/
+__pycache__/
+*.pyc
+
+# Runtime state written by the scheduler.
+.routines-state.json
+.routines-state.json.lock
+routines.yml.lock
+.routines-runs.json
+.routines-runs.json.lock
+.pytest_cache/
+.ruff_cache/

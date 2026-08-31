@@ -1,0 +1,25 @@
+[project]
+name = "almanac"
+version = "0.1.0"
+description = "A workspace that watches LLM inference — models, price, throughput and who serves it."
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+dependencies = ["agentino-framework>=1.1.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+# The tool modules insert their package root on sys.path before importing
+# from it, so imports cannot all sit at the top. E402 is silenced at those
+# specific lines with noqa rather than disabled globally.
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
